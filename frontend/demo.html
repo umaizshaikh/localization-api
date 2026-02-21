@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered Localization API - Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .input-section {
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 0.95em;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            font-family: inherit;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .translate-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .translate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .translate-btn:active {
+            transform: translateY(0);
+        }
+
+        .translate-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            display: none;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results {
+            display: none;
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 2px solid #f0f0f0;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .result-header h2 {
+            color: #333;
+            font-size: 1.5em;
+        }
+
+        .confidence-badge {
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        .confidence-high {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .confidence-medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .confidence-low {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .translation-box {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .translation-text {
+            font-size: 1.3em;
+            color: #333;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .explanation {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .explanation h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .explanation p {
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            border-radius: 12px;
+            color: white;
+            text-align: center;
+        }
+
+        .metric-label {
+            font-size: 0.85em;
+            opacity: 0.9;
+            margin-bottom: 8px;
+        }
+
+        .metric-value {
+            font-size: 1.5em;
+            font-weight: 700;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid #f5c6cb;
+            display: none;
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 40px;
+            opacity: 0.8;
+        }
+
+        @media (max-width: 768px) {
+            .options-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .main-card {
+                padding: 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌍 AI-Powered Localization API</h1>
+            <p>Context-aware translation with enterprise-quality standards</p>
+        </div>
+
+        <div class="main-card">
+            <div class="input-section">
+                <div class="input-group">
+                    <label for="sourceText">Source Text (English)</label>
+                    <textarea 
+                        id="sourceText" 
+                        rows="4" 
+                        placeholder="Enter text to translate... (e.g., 'The most powerful device ever')"
+                    ></textarea>
+                </div>
+
+                <div class="options-grid">
+                    <div class="input-group">
+                        <label for="targetLanguage">Target Language</label>
+                        <select id="targetLanguage">
+                            <option value="French">French</option>
+                            <option value="Spanish">Spanish</option>
+                            <option value="German">German</option>
+                            <option value="Japanese">Japanese</option>
+                            <option value="Chinese">Chinese (Simplified)</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="contentType">Content Type</label>
+                        <select id="contentType">
+                            <option value="">Auto-detect</option>
+                            <option value="marketing">Marketing</option>
+                            <option value="technical">Technical</option>
+                            <option value="legal">Legal</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="productCategory">Product Category (Optional)</label>
+                    <select id="productCategory">
+                        <option value="">None</option>
+                        <option value="Product A">Product A</option>
+                        <option value="Product B">Product B</option>
+                        <option value="Product C">Product C</option>
+                    </select>
+                </div>
+
+                <button class="translate-btn" onclick="translateText()">
+                    Translate with AI
+                </button>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="loading-spinner"></div>
+                <p>Analyzing translation memory and generating context-aware translation...</p>
+            </div>
+
+            <div class="error" id="error"></div>
+
+            <div class="results" id="results">
+                <div class="result-header">
+                    <h2>Translation Result</h2>
+                    <span class="confidence-badge" id="confidenceBadge"></span>
+                </div>
+
+                <div class="translation-box">
+                    <div class="translation-text" id="translationText"></div>
+                </div>
+
+                <div class="explanation">
+                    <h3>💡 Translation Insights</h3>
+                    <p id="explanationText"></p>
+                </div>
+
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">Confidence Score</div>
+                        <div class="metric-value" id="confidenceScore">-</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Processing Time</div>
+                        <div class="metric-value" id="processingTime">-</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Cost Savings</div>
+                        <div class="metric-value" id="costSavings">-</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Context Used</div>
+                        <div class="metric-value" id="contextUsed">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Powered by Claude API • Translation Memory: 48 entries • 5 Languages</p>
+        </div>
+    </div>
+
+    <script>
+        async function translateText() {
+            const sourceText = document.getElementById('sourceText').value.trim();
+            
+            if (!sourceText) {
+                showError('Please enter text to translate');
+                return;
+            }
+
+            const targetLanguage = document.getElementById('targetLanguage').value;
+            const contentType = document.getElementById('contentType').value;
+            const productCategory = document.getElementById('productCategory').value;
+
+            // Hide previous results and errors
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+            
+            // Show loading
+            document.getElementById('loading').style.display = 'block';
+            document.querySelector('.translate-btn').disabled = true;
+
+            try {
+                const response = await fetch('http://localhost:8000/translate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        source_text: sourceText,
+                        target_language: targetLanguage,
+                        content_type: contentType || null,
+                        product_category: productCategory || null
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                displayResults(data);
+
+            } catch (error) {
+                showError('Translation failed: ' + error.message);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+                document.querySelector('.translate-btn').disabled = false;
+            }
+        }
+
+        function displayResults(data) {
+            // Display translation
+            document.getElementById('translationText').textContent = data.translation;
+            
+            // Display explanation
+            document.getElementById('explanationText').textContent = data.explanation;
+            
+            // Display confidence badge
+            const confidenceScore = data.confidence_score;
+            const badge = document.getElementById('confidenceBadge');
+            badge.textContent = `${confidenceScore}% Confidence`;
+            
+            if (confidenceScore >= 90) {
+                badge.className = 'confidence-badge confidence-high';
+            } else if (confidenceScore >= 70) {
+                badge.className = 'confidence-badge confidence-medium';
+            } else {
+                badge.className = 'confidence-badge confidence-low';
+            }
+            
+            // Display metrics
+            document.getElementById('confidenceScore').textContent = confidenceScore + '/100';
+            document.getElementById('processingTime').textContent = data.processing_time;
+            document.getElementById('costSavings').textContent = data.cost_savings;
+            
+            const contextCount = data.context_used.similar_translations_count + 
+                               data.context_used.brand_guidelines_count;
+            document.getElementById('contextUsed').textContent = contextCount + ' items';
+            
+            // Show results
+            document.getElementById('results').style.display = 'block';
+            
+            // Scroll to results
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = '❌ ' + message;
+            errorDiv.style.display = 'block';
+        }
+
+        // Allow Enter key in textarea to submit (Ctrl+Enter)
+        document.getElementById('sourceText').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                translateText();
+            }
+        });
+    </script>
+</body>
+</html>

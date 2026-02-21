@@ -1,0 +1,27 @@
+@"
+# Environment variables
+.env
+APIKey.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+"@ | Out-File -FilePath .gitignore -Encoding UTF8
