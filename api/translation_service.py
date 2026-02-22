@@ -11,8 +11,19 @@ from database.vector_store import TranslationMemory
 from dotenv import load_dotenv
 from google import genai
 
+# Load .env into os.environ so GEMINI_API_KEY can come from file or from the process environment
 load_dotenv()
-_gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+
+
+def _get_gemini_api_key() -> str:
+    """Read GEMINI_API_KEY from the environment (os.environ); .env is loaded above into os.environ."""
+    key = os.environ.get("GEMINI_API_KEY")
+    if not key or not key.strip():
+        raise ValueError("GEMINI_API_KEY not found in environment variables")
+    return key.strip()
+
+
+_gemini_client = genai.Client(api_key=_get_gemini_api_key())
 _GEMINI_MODEL = "gemini-2.5-flash"
 
 
@@ -56,9 +67,7 @@ class TranslationService:
     
     def __init__(self):
         """Initialize translation service with Gemini API and translation memory"""
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            raise ValueError("GEMINI_API_KEY not found in environment variables")
+        _get_gemini_api_key()  # ensure GEMINI_API_KEY is set in os.environ (or .env)
         
         self.translation_memory = TranslationMemory()
         
