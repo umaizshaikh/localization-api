@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 from api.translation_service import TranslationService
+from api.llm_service import call_llm
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -57,7 +58,7 @@ class TranslationRequest(BaseModel):
 
 class TranslationResponse(BaseModel):
     translation: str
-    confidence_score: int
+    confidence_score: int  # Percentage (0-100), where 100 is perfect confidence
     explanation: str
     processing_time: str
     cost_savings: str
@@ -71,6 +72,21 @@ class HealthResponse(BaseModel):
 
 class StatsResponse(BaseModel):
     translation_memory_stats: dict
+
+
+class EvaluateRequest(BaseModel):
+    prompt: str
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "prompt": "Evaluate this translation for accuracy and cultural appropriateness."
+            }
+        }
+
+
+class EvaluateResponse(BaseModel):
+    response: str
 
 
 # API Endpoints
@@ -102,14 +118,17 @@ async def get_stats():
 @app.post("/translate", response_model=TranslationResponse)
 async def translate(request: TranslationRequest):
     """
-    Translate text with context awareness
+    Translate text with context awareness.
+    
+    Uses translation memory and brand guidelines to provide context-aware translations.
     
     - **source_text**: Text to translate (required)
     - **target_language**: Target language (required) - e.g., "French", "Spanish", "German"
     - **content_type**: Type of content (optional) - e.g., "marketing", "technical", "legal"
     - **product_category**: Product category (optional) - e.g., "Product A", "Product B", "Product C"
     
-    Returns translation with confidence score, explanation, and performance metrics.
+    Returns translation with confidence score (0-100 percentage), explanation, and performance metrics.
+    The "translation" field contains pure translated text with no markdown or extra formatting.
     """
     try:
         result = translation_service.translate(
@@ -124,6 +143,37 @@ async def translate(request: TranslationRequest):
         raise HTTPException(status_code=502, detail=str(e))
     except Exception as e:
         logger.exception("Translation failed")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/evaluate", response_model=EvaluateResponse)
+async def evaluate(request: EvaluateRequest):
+    """
+    Generic LLM reasoning endpoint.
+    
+    Directly calls the LLM with the provided prompt. This endpoint:
+    - Does NOT use translation memory
+    - Does NOT inject translation-specific logic
+    - Does NOT wrap or modify the prompt
+    - Returns raw LLM output only
+    
+    Use this endpoint for:
+    - Translation evaluation and reflection
+    - Quality assessment
+    - Any generic reasoning tasks
+    
+    - **prompt**: The prompt to send to the LLM (required)
+    
+    Returns raw text response from the LLM.
+    """
+    try:
+        response_text = call_llm(request.prompt)
+        return {"response": response_text}
+    except ValueError as e:
+        logger.warning("LLM evaluation error: %s", e)
+        raise HTTPException(status_code=502, detail=str(e))
+    except Exception as e:
+        logger.exception("LLM evaluation failed")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -150,7 +200,8 @@ async def get_content_types():
 # Run with: uvicorn api.main:app --reload
 if __name__ == "__main__":
     import uvicorn
-    print("🚀 Starting Localization API Server...")
-    print("📚 API Documentation: http://localhost:8000/docs")
-    print("🔍 Health Check: http://localhost:8000/health")
+    logging.basicConfig(level=logging.INFO)
+    logger.info("Starting Localization API Server...")
+    logger.info("API Documentation: http://localhost:8000/docs")
+    logger.info("Health Check: http://localhost:8000/health")
     uvicorn.run(app, host="0.0.0.0", port=8000)
